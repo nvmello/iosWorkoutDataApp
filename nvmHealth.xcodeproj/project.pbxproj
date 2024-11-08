@@ -44,6 +44,8 @@
 		0D06C89C2C1F956000C44F2C /* nvmHealthUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = nvmHealthUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D06C8A02C1F956000C44F2C /* nvmHealthUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nvmHealthUITests.swift; sourceTree = "<group>"; };
 		0D06C8A22C1F956000C44F2C /* nvmHealthUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = nvmHealthUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		0D06C8AF2C1F95A200C44F2C /* nvmHealth.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = nvmHealth.entitlements; sourceTree = "<group>"; wrapsLines = 0; };
+		0D77C05D2CDDF0CC00BFA3C1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,8 @@
 		0D06C8842C1F955F00C44F2C /* nvmHealth */ = {
 			isa = PBXGroup;
 			children = (
+				0D77C05D2CDDF0CC00BFA3C1 /* Info.plist */,
+				0D06C8AF2C1F95A200C44F2C /* nvmHealth.entitlements */,
 				0D06C8852C1F955F00C44F2C /* nvmHealthApp.swift */,
 				0D06C8872C1F955F00C44F2C /* ContentView.swift */,
 				0D06C8892C1F956000C44F2C /* Assets.xcassets */,
@@ -419,12 +423,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = nvmHealth/nvmHealth.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"nvmHealth/Preview Content\"";
 				DEVELOPMENT_TEAM = HST68XV9V5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = nvmHealth/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need access to your body fat percentage data to provide personalized health insights.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to communicate with the workout server.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -448,12 +456,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = nvmHealth/nvmHealth.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"nvmHealth/Preview Content\"";
 				DEVELOPMENT_TEAM = HST68XV9V5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = nvmHealth/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need access to your body fat percentage data to provide personalized health insights.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to communicate with the workout server.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
