@@ -11,7 +11,7 @@ import SwiftUI
 struct nvmHealthApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Backend()
         }
     }
 }
