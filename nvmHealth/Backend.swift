@@ -17,10 +17,10 @@ struct Backend: View {
     @State private var recentWorkout: String = "No recent workout data available"
     
     
-
+    
     var body: some View {
         VStack(spacing: 20) {
-
+            
             Text("Most Recent Workout: \(recentWorkout)")
                 .font(.title3)
                 .padding()
@@ -33,16 +33,13 @@ struct Backend: View {
             
         }
     }
-
+    
     private func requestAuthorization() async {
+        
         // List of data types we need to read and write.
         let allTypes: Set = [
-            HKQuantityType.workoutType(),
-//            HKQuantityType(.activeEnergyBurned),
-//            HKQuantityType(.distanceCycling),
-//            HKQuantityType(.distanceWalkingRunning),
-//            HKQuantityType(.distanceWheelchair),
-//            HKQuantityType(.heartRate)
+            HKQuantityType.workoutType()
+            
         ]
         
         do{
@@ -53,25 +50,64 @@ struct Backend: View {
             fatalError("*** An unexpected error occured while requesting authorization: \(error.localizedDescription) ***")
         }
         
-    }
-
-
-//    private func fetchMostRecentWorkout() {
-//            
-//        }
-//    
-//    private func startWorkoutObserver() {
-//            
-//        }
-//
-//    
-//    private func processWorkout(_ workout: HKWorkout) {
-//        
-//    }
-//
-//    private func sendWorkoutDataToWebsite(type: String, duration: Double, calories: Double) {
-//    }
+        startWorkoutObserver();
         
+    }
+    
+    
+    
+    private func startWorkoutObserver() {
+        guard let healthStore = self.healthStore else { return };
+        let workoutType = HKObjectType.workoutType();
+        
+        healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) {
+            success,
+            error in
+            if let error = error {
+                print("Failed to enable background delivery: \(error.localizedDescription)")
+            } else if success {
+                print("Background delivery enabled successfully!")
+                let query = HKObserverQuery(sampleType: workoutType, predicate: nil) { (
+                    query,
+                    completionHandler,
+                    errorOrNil
+                ) in
+                    
+                    if let error = errorOrNil {
+                        print("Observer query failed: \(error.localizedDescription)")
+                        return
+                    }
+                    print("New workout detected.")
+                    
+                    // Take whatever steps are necessary to update your app.
+                    // This often involves executing other queries to access the new data.
+                    
+                    // If you have subscribed for background updates you must call the completion handler here.
+                    completionHandler()
+                }
+                healthStore.execute(query)
+                
+                print("Observer query started: \(query.description)")
+            }
+        }
+        
+        
+    }
+    
+    //    private func fetchMostRecentWorkout() {
+    //
+    //        }
+    //
+    
+    //
+    //
+    //    private func processWorkout(_ workout: HKWorkout) {
+    //
+    //    }
+    //
+    //    private func sendWorkoutDataToWebsite(type: String, duration: Double, calories: Double) {
+    //    }
+    
 }
 
 extension HKWorkoutActivityType {
@@ -151,7 +187,7 @@ extension HKWorkoutActivityType {
         case .handCycling: return "Hand Cycling"
         case .discSports: return "Disc Sports"
         case .fitnessGaming: return "Fitness Gaming"
-        // Add any additional cases here if necessary
+            // Add any additional cases here if necessary
         default: return "Other Activity"
         }
     }
