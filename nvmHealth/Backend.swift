@@ -14,25 +14,102 @@ import HealthKit
 struct Backend: View {
     @State private var healthStore: HKHealthStore?
     @State private var bodyFatPercentage: Double = 0.0
-    @State private var recentWorkout: String = "No recent workout data available"
+    @State private var recentWorkout: WorkoutRecord? = nil
+    @State private var observerStarted = false
     
-    
+    struct WorkoutRecord: Codable{
+        let id: UUID
+        let type: String
+        let startDate: Date
+        let endDate: Date
+        let duration: Double
+        let calories: Double
+        let distance: Double?
+        let elevationGain: Double?
+        let timezone: String        // Add timezone
+        let timezoneName: String    // Add timezone name (e.g., "America/New_York")
+        
+        enum CodingKeys: String, CodingKey {
+            case id = "_id"
+            case type
+            case startDate = "start_date"
+            case endDate = "end_date"
+            case duration
+            case calories
+            case distance
+            case elevationGain = "elevation_gain"
+            case timezone
+            case timezoneName = "timezone_name"
+        }
+    }
     
     var body: some View {
         VStack(spacing: 20) {
-            
-            Text("Most Recent Workout: \(recentWorkout)")
-                .font(.title3)
+            if let workout = recentWorkout {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Recent Workout")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    
+                    Group {
+                        InfoRow(label: "Type", value: workout.type)
+                        InfoRow(label: "Duration", value: "\(Int(workout.duration)) minutes")
+                        InfoRow(label: "Calories", value: String(format: "%.1f kcal", workout.calories))
+                        
+                        if let distance = workout.distance {
+                            InfoRow(label: "Distance", value: String(format: "%.2f miles", distance))
+                        }
+                        
+                        if let elevation = workout.elevationGain {
+                            InfoRow(label: "Elevation Gain", value: String(format: "%.1f ft", elevation))
+                        }
+                        
+                        InfoRow(label: "Start Time", value: formatDate(workout.startDate))
+                        InfoRow(label: "End Time", value: formatDate(workout.endDate))
+                    }
+                }
                 .padding()
+                .background(Color(.systemBackground))
+                .cornerRadius(12)
+                .shadow(radius: 2)
+            } else {
+                Text("No recent workout data available")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+            }
         }
+        .padding()
         .onAppear {
             self.healthStore = HKHealthStore()
-            Task{
-                await self.requestAuthorization();
+            Task {
+                await self.requestAuthorization()
             }
-            
         }
     }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    // Helper view for consistent row formatting
+    struct InfoRow: View {
+        let label: String
+        let value: String
+        
+        var body: some View {
+            HStack {
+                Text(label)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(value)
+                    .fontWeight(.medium)
+            }
+        }
+    }
+    
     
     private func requestAuthorization() async {
         
@@ -57,6 +134,8 @@ struct Backend: View {
     
     
     private func startWorkoutObserver() {
+        guard !observerStarted else { return }
+        observerStarted = true
         guard let healthStore = self.healthStore else { return };
         let workoutType = HKObjectType.workoutType();
         
@@ -92,32 +171,32 @@ struct Backend: View {
         
     }
     
-//    private func fetchLast20Workouts() {
-//        guard let healthStore = self.healthStore else { return }
-//        let workoutType = HKObjectType.workoutType()
-//        
-//        // Fetch the last 20 workouts, sorted by end date
-//        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
-//        let query = HKSampleQuery(sampleType: workoutType, predicate: nil, limit: 20, sortDescriptors: [sortDescriptor]) { query, results, error in
-//            guard let workouts = results as? [HKWorkout] else {
-//                if let error = error {
-//                    print("Error fetching workouts: \(error.localizedDescription)")
-//                } else {
-//                    print("No workouts found.")
-//                }
-//                return
-//            }
-//            
-//            // Process each workout
-//            DispatchQueue.main.async {
-//                workouts.forEach { workout in
-//                    self.processWorkout(workout)
-//                }
-//            }
-//        }
-//        
-//        healthStore.execute(query)
-//    }
+    private func fetchLast20Workouts() {
+        guard let healthStore = self.healthStore else { return }
+        let workoutType = HKObjectType.workoutType()
+        
+        // Fetch the last 20 workouts, sorted by end date
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+        let query = HKSampleQuery(sampleType: workoutType, predicate: nil, limit: 20, sortDescriptors: [sortDescriptor]) { query, results, error in
+            guard let workouts = results as? [HKWorkout] else {
+                if let error = error {
+                    print("Error fetching workouts: \(error.localizedDescription)")
+                } else {
+                    print("No workouts found.")
+                }
+                return
+            }
+            
+            // Process each workout
+            DispatchQueue.main.async {
+                workouts.forEach { workout in
+                    self.processWorkout(workout)
+                }
+            }
+        }
+        
+        healthStore.execute(query)
+    }
     
     private func fetchMostRecentWorkout() {
         guard let healthStore = self.healthStore else { return };
@@ -144,40 +223,29 @@ struct Backend: View {
 
     }
 
-    struct WorkoutRecord: Codable{
-        let id: UUID                    // workout.UUID
-        let type: String               // workout.workoutActivityType.name
-        let startDate: Date            // workout.startDate
-        let endDate: Date              // workout.endDate
-        let duration: Double           // workout.duration
-        let calories: Double           // workout.totalEnergyBurned
-        let distance: Double?          // workout.totalDistance (optional)
-        let elevationGain: Double?     // workout.totalFlightsClimbed (optional)
-        
-        // Custom coding keys for proper field names in MongoDB
-        enum CodingKeys: String, CodingKey {
-            case id = "_id"  // MongoDB typically uses _id
-            case type
-            case startDate = "start_date"
-            case endDate = "end_date"
-            case duration
-            case calories
-            case distance
-            case elevationGain = "elevation_gain"
-        }
-    }
+    
     
     private func processWorkout(_ workout: HKWorkout) {
+        // Extract timezone information from workout metadata
+        let workoutTimeZone = workout.metadata?[HKMetadataKeyTimeZone] as? String ?? TimeZone.current.identifier
+        let timeZone = TimeZone(identifier: workoutTimeZone) ?? TimeZone.current
+        
         let workoutRecord = WorkoutRecord(
             id: workout.uuid,
             type: workout.workoutActivityType.name,
             startDate: workout.startDate,
             endDate: workout.endDate,
-            duration: workout.duration / 60, // Converting to minutes
+            duration: workout.duration / 60,
             calories: workout.totalEnergyBurned?.doubleValue(for: .kilocalorie()) ?? 0,
-            distance: workout.totalDistance?.doubleValue(for: .mile()) ?? nil, // or .kilometer()
-            elevationGain: workout.totalFlightsClimbed?.doubleValue(for: .count()) ?? nil
+            distance: workout.totalDistance?.doubleValue(for: .mile()) ?? nil,
+            elevationGain: workout.totalFlightsClimbed?.doubleValue(for: .count()) ?? nil,
+            timezone: timeZone.abbreviation() ?? "Unknown",    // e.g., "EST", "PST"
+            timezoneName: timeZone.identifier                  // e.g., "America/New_York"
         )
+        
+        DispatchQueue.main.async {
+            self.recentWorkout = workoutRecord
+        }
         
         print("Workout: \(workoutRecord)")
         sendWorkoutDataToWebsite(workoutRecord: workoutRecord)
@@ -187,7 +255,7 @@ struct Backend: View {
     
 
     private func sendWorkoutDataToWebsite(workoutRecord: WorkoutRecord) {
-        guard let url = URL(string: "http://192.168.12.113:3000/api/workouts") else { return }
+        guard let url = URL(string: "https://vmellodev-production.up.railway.app/api/workouts") else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -201,7 +269,10 @@ struct Backend: View {
             "duration": workoutRecord.duration,
             "calories": workoutRecord.calories,
             "distance": workoutRecord.distance,
-            "elevation_gain": workoutRecord.elevationGain
+            "elevation_gain": workoutRecord.elevationGain,
+            "timezone": workoutRecord.timezone,
+            "timezoneName": workoutRecord.timezoneName
+            
         ]
         
         let filteredWorkoutData = workoutData.compactMapValues { $0 }
@@ -224,7 +295,7 @@ struct Backend: View {
 }
 
 extension HKWorkoutActivityType {
-    var name2: String {
+    var name: String {
         switch self {
         case .americanFootball: return "American Football"
         case .archery: return "Archery"
@@ -256,6 +327,7 @@ extension HKWorkoutActivityType {
         case .mindAndBody: return "Mind and Body"
         case .paddleSports: return "Paddle Sports"
         case .play: return "Play"
+        case .pickleball: return "Pickleball"
         case .preparationAndRecovery: return "Preparation and Recovery"
         case .racquetball: return "Racquetball"
         case .rowing: return "Rowing"
@@ -306,9 +378,8 @@ extension HKWorkoutActivityType {
     }
 }
 
-
 struct Backend_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        Backend()
     }
 }
